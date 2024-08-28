@@ -22,6 +22,7 @@ class Topic(models.Model):
     def __str__(self):
         return self.name
 
+
 class Room(models.Model):
     host = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     topic= models.ForeignKey(Topic, on_delete= models.SET_NULL, null = True)
@@ -37,9 +38,13 @@ class Room(models.Model):
     def __str__(self):
         return self.name
 
+#the - before updated and created puts them in descending order
 # auto now take ss everytime we save the data
-# auto now add takes only timestamp
-    
+# auto now add takes only timestamp when we first save the db
+#black is for form and null is for db
+
+
+
 # users can have different messages while a msg can have only one user 
 # so its a one to many relationship from user -> to msg.
 class Message(models.Model):
@@ -61,4 +66,5 @@ class Message(models.Model):
 # so when an user logs in the django administration it creates a session token in the database(settings.py > installed apps > sessions)
 # this session token stores information like when the user logged in , who this user is , etc.
 # go to django administration > inspect > application > session > cookies 
+#CASCADE will delete all childs of the parents if parent is deleted
 

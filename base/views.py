@@ -69,7 +69,9 @@ def registerPage(request):
 # user that just registered is dsaved and then logged in
 def home(request):
     # queryset = modelname.objects.method()
+
     q= request.GET.get('q') if request.GET.get('q')!= None else ' '
+     
     rooms = Room.objects.filter(
         Q(topic__name__icontains=q) |
         Q(name__icontains=q) |
@@ -82,7 +84,7 @@ def home(request):
     room_count = rooms.count()
     room_messages = Message.objects.filter(Q(room__topic__name__icontains=q))
 
-    context = {'rooms' : rooms, 'topics':topics,'room_count':room_count, 'room_messages': room_messages}
+    context = {'rooms' : rooms, 'topics': topics,'room_count':room_count, 'room_messages': room_messages}
     return render(request, 'base/home.html', context )
 
 def room(request,pk):
@@ -196,4 +198,4 @@ def topicsPage(request):
 
 def activityPage(request):
     room_messages = Message.objects.all()
-    return render(request, 'base/activity.html', {'room_messages': room_messages})
+    return render(request, 'base/activity.html', {'room_messages': room_messages})   
