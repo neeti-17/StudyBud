@@ -7,7 +7,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import  User
 from django.http import HttpResponse 
 from .models import Room, Topic, Message
-from .forms import RoomForm
+from .forms import RoomForm, UserForm, MyUserCreationForm
 
 # rooms = [
 #     {'id':1, 'name': 'lets learn python!'},
@@ -24,15 +24,15 @@ def loginPage(request):
         return redirect('home')
 
     if request.method == 'POST':
-        username = request.POST.get('username').lower()
+        email = request.POST.get('email').lower()
         password = request.POST.get('password')
 
         try:
-            user = User.objects.get(username=username)
+            user = User.objects.get(email=email)
         except:
             messages.error(request, "User does not exist")
 
-        user = authenticate(request, username=username, password=password)
+        user = authenticate(request, email = email, password=password)
 
         if user is not None:
             login(request, user)
@@ -50,10 +50,10 @@ def logoutUser(request):
 
 def registerPage(request):
     # page = 'register'
-    form = UserCreationForm()
+    form = MyUserCreationForm()
 
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)  
+        form = MyUserCreationForm(request.POST)  
         if form.is_valid():
             # if form or user is valid
             user = form.save(commit=False)
@@ -66,7 +66,7 @@ def registerPage(request):
             messages.error(request, 'An error occurred  during registration')
     return render(request, 'base/login_register.html',{'form':form})
 
-# user that just registered is dsaved and then logged in
+# user that just registered is saved and then logged in
 def home(request):
     # queryset = modelname.objects.method()
 
@@ -80,9 +80,9 @@ def home(request):
     # i means case insensitive
     # import Q is used for add funtionalities like and or not operators
 
-    topics = Topic.objects.all()
+    topics = Topic.objects.all()[0:5]
     room_count = rooms.count()
-    room_messages = Message.objects.filter(Q(room__topic__name__icontains=q))
+    room_messages = Message.objects.filter(Q(room__topic__name__icontains=q))[0:3]
 
     context = {'rooms' : rooms, 'topics': topics,'room_count':room_count, 'room_messages': room_messages}
     return render(request, 'base/home.html', context )
@@ -116,34 +116,45 @@ def userProfile(request,pk):
 @login_required(login_url='login')
 def createRoom(request):
     form = RoomForm()
-
+    topics = Topic.objects.all()
     if request.method == 'POST':
         # print(request.POST)
-        form = RoomForm(request.POST)
-        if form.is_valid():
-            room = form.save(commit=False)
-            room.host = request.user
-            room.save()
-            return redirect('home')
+        # form = RoomForm(request.POST)
+
+        topic_name = request.POST.get('topic')
+        topic, created = Topic.objects.get_or_create(name=topic_name)
+
+        Room.objects.create(
+            host=request.user,
+            topic=topic,
+            name=request.POST.get('name'),
+            description=request.POST.get('description'),
+        )
+        return redirect('home')
     
-    context={'form': form}
+    context={'form': form, 'topics' : topics}
     return render(request, 'base/room_form.html', context)
 
 @login_required(login_url='login')
 def updateRoom(request, pk):
     room = Room.objects.get(id=pk)
     form = RoomForm(instance=room)
-
+    topics = Topic.objects.all()
     if request.user != room.host :
         return HttpResponse("You're not allowed here!!")
 
     if request.method == 'POST':
-        form = RoomForm(request.POST, instance= room)
-        if form.is_valid():
-            form.save()
-            return redirect('home')
+        topic_name = request.POST.get('topic')
+        topic, created = Topic.objects.get_or_create(name=topic_name)
+        room.name = request.POST.get('name')
+        room.topic = topic
+        room.description = request.POST.get('description')
+        # form = RoomForm(request.POST, instance= room)
+        
+        room.save()
+        return redirect('home')
 
-    context = {'form': form}
+    context = {'form': form,'topics': topics, 'room': room}
     return render(request, 'base/room_form.html', context)
 
 
